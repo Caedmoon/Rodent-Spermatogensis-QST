@@ -108,16 +108,16 @@ Model <- function(parms){
 Time.MOD = 24 #time modifier in hours
 parms <- list(
   #all currently from Ray (2014)
-  k_mitosis <- 0.002 * Time.MOD, #/h mitosis - determined by division of SCC
-  k_trans_A <- 0.004878049 * Time.MOD, #/h S-gonium A --> s-gonium I
-  k_trans_I <- 0.01694915 * Time.MOD, #s-gonium I --> S-gonium B 
-  k_GP <- 0.04545455 * Time.MOD, #S-gonium B --> S-cyte PI-L-Z 
-  k_PILZ <- 0.007142857 * Time.MOD, #/h S-cyte PI-L-Z --> S-cyte P-Di 
-  k_Di <- 0.004651163 * Time.MOD, #S-cyte P-Di --> S-cytes M
-  k_M <- 0.007142857 * Time.MOD, #/h S-cytes M --> early s-tids via differentiation
-  k_112 <- 0.007142857 * Time.MOD, #/h S-tids --> late s-tids via differentiation
-  k_maturation <- 0.08 * Time.MOD, #Maturation of spermatids to spermatozoa
-  k_breakdown <- 0.002 * Time.MOD #breakdown of spermatozoa
+  k_mitosis = 0.002 * Time.MOD, #/h mitosis - determined by division of SCC
+  k_trans_A = 0.004878049 * Time.MOD, #/h S-gonium A --> s-gonium I
+  k_trans_I = 0.01694915 * Time.MOD, #s-gonium I --> S-gonium B 
+  k_GP = 0.04545455 * Time.MOD, #S-gonium B --> S-cyte PI-L-Z 
+  k_PILZ = 0.007142857 * Time.MOD, #/h S-cyte PI-L-Z --> S-cyte P-Di 
+  k_Di = 0.004651163 * Time.MOD, #S-cyte P-Di --> S-cytes M
+  k_M = 0.007142857 * Time.MOD, #/h S-cytes M --> early s-tids via differentiation
+  k_112 = 0.007142857 * Time.MOD, #/h S-tids --> late s-tids via differentiation
+  k_maturation = 0.08 * Time.MOD, #Maturation of spermatids to spermatozoa
+  k_breakdown = 0.002 * Time.MOD #breakdown of spermatozoa
 )
 
 
@@ -212,3 +212,42 @@ plot(Modelcost$residuals$x, Modelcost$residuals$weight,
      ylim = range(Modelcost$residuals$weight, na.rm = TRUE))
 
 
+#Local sensitivity Analysis ----
+
+LSA <- sensFun(Model, parms = parms)
+
+#summary plot
+plot(summary(LSA, vars = TRUE))
+
+#Bivariate sensitivity 
+pairs(LSA, which = c(LSA$var), col = colours)
+
+
+#Sensitivity to X parameters overtime 
+# Set up parameters
+species_list <- unique(LSA$var)
+param_colors <- rainbow(length(names(parms)))
+
+# Loop through each species
+for (spec in species_list) {
+  
+  plot(LSA$x[LSA$var == spec], 
+       LSA[[names(parms)[1]]][LSA$var == spec],
+       type = "l", col = param_colors[1], lwd = 3,
+       ylim = c(-1, 1),
+       ylab = paste("Sensitivity of", spec, "to Parameters"), 
+       xlab = "Time",
+       main = paste("Sensitivity of", spec, "to Model Parameters"))
+  
+  # Add other parameter sensitivities
+  for (i in 2:length(names(parms))) {
+    lines(LSA$x[LSA$var == spec], 
+          LSA[[names(parms)[i]]][LSA$var == spec],
+          col = param_colors[i], lwd = 3)
+  }
+  
+  # Add a legend
+  legend("topright", legend = names(parms),
+         col = param_colors, lty = 1, lwd = 2, cex = 0.7)
+  
+}
