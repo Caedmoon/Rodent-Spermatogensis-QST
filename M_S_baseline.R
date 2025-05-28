@@ -27,7 +27,7 @@ Model <- function(parms){
       d <- length(initial)
       #calculations
       #feedback to maintain constant levels
-      fdbc <- 0
+      fdbc <- 1
       #Sertoli cells?
       
       # Rate equations
