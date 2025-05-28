@@ -11,6 +11,10 @@ library("gridExtra")
 #CSV files for the values so model can be calibrated
 #consider that the whole process takes 34 days
 
+#28/05/2025
+#Have to alter Nakata_data_transformation so that instead of Cell Count 
+
+
 
 #Model Assumptions----
 #Post puberty
@@ -53,9 +57,9 @@ Model <- function(parms){
       #Spermatids 1 - 12
       d[7] <- - k_M * y["Sc_M"] - k_112 * y["St_112"]
       #Spermatids 13-16
-      d[8] <- k_112 * y["St_112"] - k_maturation* y["St_1366"]
+      d[8] <- k_112 * y["St_112"] - k_maturation* y["St_1316"]
       #Spermatozoa
-      d[9] <- k_maturation * y["St_1366"] - k_breakdown * y["S_zoa"]
+      d[9] <- k_maturation * y["St_1316"] - k_breakdown * y["S_zoa"]
       # Return the rates of change
       return(list(d))
     })
@@ -77,11 +81,11 @@ Model <- function(parms){
   #Spermatids 1 - 12
   St_112_0 <- 144.60 #Nakata (2015)
   #Spermatids 13-16
-  St_1366_0 <- 108.80 #Nakata (2015)
+  St_1316_0 <- 108.80 #Nakata (2015)
   #Spermatozoa
   S_zoa_0 <- 108.8 #assumption that all spermatids form spermatozoa
   initial <- c(Sg_A = Sg_A_0, Sg_I = Sg_I_0, Sg_B = Sg_B_0, Sc_PILZ = Sc_PILZ_0, Sc_PDi = Sc_PDi_0,
-               Sc_M = Sc_M_0, St_112 = St_112_0, St_1366 = St_1366_0, S_zoa = S_zoa_0)
+               Sc_M = Sc_M_0, St_112 = St_112_0, St_1316 = St_1316_0, S_zoa = S_zoa_0)
   
   #Fixed parameters
   fixed <- list(
@@ -136,8 +140,8 @@ test <- ggplot() +
   geom_line(data = Initial_out, aes(x = time, y = Sc_PDi, colour = "Sc_PDi")) +
   geom_line(data = Initial_out, aes(x = time, y = Sc_M, colour = "Sc_M")) +
   geom_line(data = Initial_out, aes(x = time, y = St_112, colour = "St_112")) +
-  geom_line(data = Initial_out, aes(x = time, y = St_1366, colour = "St_1366")) +
-  geom_line(data = Initial_out, aes(x = time, y = St_1366, colour = "S_zoa")) +
+  geom_line(data = Initial_out, aes(x = time, y = St_1316, colour = "St_1316")) +
+  geom_line(data = Initial_out, aes(x = time, y = S_zoa, colour = "S_zoa")) +
 
   # Observed data points
   geom_point(data = obs_all, aes(x = time, y = Count, colour = Cell), shape = 21, fill = "black", size = 2) +
@@ -153,7 +157,7 @@ test <- ggplot() +
     "Sc_PDi" = "#e47c19",
     "Sc_M" = "#98df8a",
     "St_112" = "#ff9896",
-    "St_1366" = "#d62728",
+    "St_1316" = "#d62728",
     "S_zoa" = "#9467bd"  
   )) +
   
@@ -166,12 +170,23 @@ print(test)
 
 #cost function-----
 cost <- function(parms) {
-  # Run the model with the provided parameters
+  # Run the model with current parameters
   out <- Model(parms = parms)
-  cost_value <- modCost(out, obs = obs_cell, err = "S.D")
+  
+  for (x in seq_along(obs_v_cost)) {
+    obs_df <- obs_v_cost[[x]]
+    
+    # Compute cost
+    if (x == 1) {
+      cost_value <- modCost(model = out, obs = obs_df, err = "S.D")
+    } else {
+      cost_value <- modCost(model = out, obs = obs_df, err = "S.D", cost = cost_value)
+    }
+  }
   
   return(cost_value)
 }
+
 
 # Example of calling the cost function
 Modelcost <- cost(parms = parms)
@@ -185,7 +200,7 @@ colours <- c(    "Sg_A" = "#aec7e8",
                  "Sc_PDi" = "#e47c19",
                  "Sc_M" = "#98df8a",
                  "St_112" = "#ff9896",
-                 "St_1366" = "#d62728",
+                 "St_1316" = "#d62728",
                  "S_zoa" = "#9467bd" 
                  )
 plot(Modelcost$residuals$x, Modelcost$residuals$weight, 
